@@ -1,48 +1,51 @@
 import requests
+import json
 import os
 
 SLACK_WEBHOOK_URL = os.getenv("SLACK_WEBHOOK_URL")
+STATE_FILE = "state.json"
 
 URL = "https://api.weather.gov/alerts/active"
-
 KEYWORDS = ["Tornado Warning", "Flash Flood Warning"]
 
 
-def send_to_slack(message):
-    try:
-        requests.post(SLACK_WEBHOOK_URL, json={"text": message}, timeout=10)
-    except Exception as e:
-        print("Slack error:", e)
+def load_state():
+    if not os.path.exists(STATE_FILE):
+        return set()
+    with open(STATE_FILE, "r") as f:
+        return set(json.load(f))
+
+
+def save_state(state):
+    with open(STATE_FILE, "w") as f:
+        json.dump(list(state), f)
+
+
+def send_to_slack(msg):
+    requests.post(SLACK_WEBHOOK_URL, json={"text": msg}, timeout=10)
 
 
 def fetch_alerts():
-    headers = {"User-Agent": "weather-bot"}
-    res = requests.get(URL, headers=headers, timeout=10)
+    res = requests.get(URL, headers={"User-Agent": "bot"}, timeout=10)
     data = res.json()
 
-    alerts_found = 0
+    seen = load_state()
+    updated = set(seen)
 
-    for feature in data.get("features", []):
-        props = feature.get("properties", {})
-        event = props.get("event", "")
-        area = props.get("areaDesc", "")
-        headline = props.get("headline", "")
-        severity = props.get("severity", "")
+    for f in data.get("features", []):
+        p = f.get("properties", {})
 
-        if event in KEYWORDS:
-            alerts_found += 1
+        event = p.get("event", "")
+        alert_id = p.get("id", "")
+        area = p.get("areaDesc", "")
+        headline = p.get("headline", "")
 
-            message = f"""
-🚨 {event}
-Severity: {severity}
-📍 {area}
+        if event in KEYWORDS and alert_id not in seen:
+            msg = f"🚨 {event}\n📍 {area}\n{headline}"
+            send_to_slack(msg)
+            updated.add(alert_id)
 
-{headline}
-            """
-
-            send_to_slack(message)
-
-    print(f"Alerts sent: {alerts_found}")
+    save_state(updated)
 
 
 if __name__ == "__main__":
