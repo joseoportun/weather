@@ -28,9 +28,12 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
         run: python app.py
+        
 
       - name: Save state
         uses: actions/cache@v4
         with:
           path: state.json
           key: weather-state
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
