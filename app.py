@@ -29,6 +29,7 @@ def send_to_slack(msg):
 
 
 def fetch_alerts():
+    send_to_slack("🧪 Test message: bot is running")
     res = requests.get(URL, headers={"User-Agent": "weather-bot"}, timeout=10)
     data = res.json()
 
