@@ -27,9 +27,9 @@ def save_state(state):
 def send_to_slack(msg):
     requests.post(SLACK_WEBHOOK_URL, json={"text": msg}, timeout=10)
 
+    send_to_slack("🧪 Test message: bot is running")
 
 def fetch_alerts():
-    send_to_slack("🧪 Test message: bot is running")
     res = requests.get(URL, headers={"User-Agent": "weather-bot"}, timeout=10)
     data = res.json()
 
