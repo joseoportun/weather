@@ -64,6 +64,5 @@ schedule.every(5).minutes.do(job)
 if __name__ == "__main__":
     print("Weather alert app running...")
     job()
-    while True:
-        schedule.run_pending()
-        time.sleep(1)
+   if __name__ == "__main__":
+    fetch_alerts()
