@@ -5,18 +5,15 @@ on:
     - cron: "*/5 * * * *"
   workflow_dispatch:
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   run-script:
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
-
-      - name: Restore state
-        uses: actions/cache@v4
-        with:
-          path: state.json
-          key: weather-state
 
       - uses: actions/setup-python@v5
         with:
@@ -28,12 +25,3 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
         run: python app.py
-        
-
-      - name: Save state
-        uses: actions/cache@v4
-        with:
-          path: state.json
-          key: weather-state
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
