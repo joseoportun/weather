@@ -12,6 +12,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Restore state
+        uses: actions/cache@v4
+        with:
+          path: state.json
+          key: weather-state
+
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
@@ -22,3 +28,9 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
         run: python app.py
+
+      - name: Save state
+        uses: actions/cache@v4
+        with:
+          path: state.json
+          key: weather-state
