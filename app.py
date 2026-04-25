@@ -1,68 +1,70 @@
 import requests
-import time
-import schedule
+import json
+import os
 
-# ==== CONFIG ====
-SLACK_WEBHOOK_URL = "YOUR_SLACK_WEBHOOK_URL"
+SLACK_WEBHOOK_URL = os.getenv(https://hooks.slack.com/services/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)
+
 ALERT_API_URL = "https://api.weather.gov/alerts/active"
 
-# Keywords to filter
 KEYWORDS = ["Tornado Warning", "Flash Flood Warning"]
 
-# Avoid duplicates
-sent_alerts = set()
+STATE_FILE = "state.json"
+
+
+def load_state():
+    if not os.path.exists(STATE_FILE):
+        return set()
+    with open(STATE_FILE, "r") as f:
+        return set(json.load(f))
+
+
+def save_state(alert_ids):
+    with open(STATE_FILE, "w") as f:
+        json.dump(list(alert_ids), f)
 
 
 def send_to_slack(message):
     payload = {"text": message}
     try:
-        requests.post(SLACK_WEBHOOK_URL, json=payload)
+        requests.post(SLACK_WEBHOOK_URL, json=payload, timeout=10)
     except Exception as e:
         print("Slack error:", e)
 
 
 def fetch_alerts():
-    try:
-        response = requests.get(
-            ALERT_API_URL,
-            headers={"User-Agent": "weather-alert-app"}
-        )
-        data = response.json()
+    headers = {"User-Agent": "slack-weather-alerts"}
+    response = requests.get(ALERT_API_URL, headers=headers, timeout=10)
+    data = response.json()
 
-        for feature in data.get("features", []):
-            props = feature.get("properties", {})
-            event = props.get("event", "")
-            headline = props.get("headline", "")
-            area = props.get("areaDesc", "")
-            description = props.get("description", "")
-            alert_id = props.get("id", headline)
+    sent_alerts = load_state()
+    new_sent_alerts = set(sent_alerts)
 
-            if event in KEYWORDS and alert_id not in sent_alerts:
-                message = f"""
-🚨 {event}
+    for feature in data.get("features", []):
+        props = feature.get("properties", {})
+
+        event = props.get("event", "")
+        alert_id = props.get("id", "")
+        area = props.get("areaDesc", "")
+        headline = props.get("headline", "")
+        description = props.get("description", "")
+        severity = props.get("severity", "")
+
+        if event in KEYWORDS and alert_id not in sent_alerts:
+            message = f"""
+🚨 *{event}*
+Severity: {severity}
 📍 {area}
 
 {headline}
 
-{description[:300]}...
-                """
+{description[:400]}...
+            """
 
-                send_to_slack(message)
-                sent_alerts.add(alert_id)
+            send_to_slack(message)
+            new_sent_alerts.add(alert_id)
 
-    except Exception as e:
-        print("Fetch error:", e)
+    save_state(new_sent_alerts)
 
-
-def job():
-    print("Checking alerts...")
-    fetch_alerts()
-
-
-schedule.every(5).minutes.do(job)
 
 if __name__ == "__main__":
-    print("Weather alert app running...")
-    job()
-   if __name__ == "__main__":
     fetch_alerts()
