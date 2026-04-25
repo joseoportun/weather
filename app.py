@@ -26,8 +26,7 @@ def save_state(state):
 
 def send_to_slack(msg):
     requests.post(SLACK_WEBHOOK_URL, json={"text": msg}, timeout=10)
-
-    send_to_slack("🧪 Test message: bot is running")
+    
 
 def fetch_alerts():
     res = requests.get(URL, headers={"User-Agent": "weather-bot"}, timeout=10)
@@ -47,7 +46,7 @@ def fetch_alerts():
         area = p.get("areaDesc", "")
         headline = p.get("headline", "")
 
-        if event in KEYWORDS:
+        if True:
             alerts_found += 1
 
             if alert_id not in seen:
